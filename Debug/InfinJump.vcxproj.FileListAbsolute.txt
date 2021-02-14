@@ -1,0 +1,2 @@
+C:\Users\FunkyMonk\source\repos\InfinJump\Debug\InfinJump.exe
+C:\Users\FunkyMonk\source\repos\InfinJump\Debug\InfinJump.pdb

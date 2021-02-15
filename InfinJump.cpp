@@ -41,20 +41,24 @@ int main()
 	bool bKey[4];	// Storing key states
 	int nCurrentX = nFieldWidth / 2 - 2;	// Starting x pos of character
 	int nCurrentY = nFieldHeight - 3;		// Starting y pos of character
-	int nBlockX = nFieldWidth;
-	int nBlockY = nFieldHeight - 5;
-	int nCurrentPiece = 0;
+	int nBlockX [3] = { nFieldWidth, nFieldWidth + 30, nFieldWidth + 60 };
+	int nBlockY[3] = { nFieldHeight - 5, nFieldHeight - 5, nFieldHeight - 5 };
+	int nCurrentPiece [3] = { 0, 1, 2 };
 	bool bGameOver = false;					// Main game loop trigger
 	double jumpCounter = 0;					// Used for jumping math
 	double yVel = 0;
 	double grav = 1;
 	double timeInt = .5;
 	double speedLim = 1.5;
+	int mainCount = 0;
+	int blockSpeed = 1;
+	int countSkip = 3;
 
 	while (!bGameOver) {	// Main game loop
 
 		// Timing =======================
 		std::this_thread::sleep_for(25ms);
+		mainCount++; 
 
 		// Input ========================
 		for (int k = 0; k < 4; k++) {							 //R    L   U   D
@@ -74,9 +78,8 @@ int main()
 		}
 		
 		yVel += grav * jumpCounter;
-		//nCurrentY += std::round(yVel*timeInt);
 		
-		if (yVel < -1*speedLim) {
+		if (yVel < -1 * speedLim) {
 			nCurrentY -= speedLim;
 		}
 		else if (yVel > speedLim) {
@@ -93,21 +96,34 @@ int main()
 		}
 
 		// Move block
-		nBlockX -= 1;
-		if (nBlockX < 0) {
-			nBlockX = nFieldWidth;
-			nCurrentPiece = std::rand() % 3;
+		if (mainCount % 500 == 0 && countSkip == 1) {
+			blockSpeed++; 
+		}
+		else if (mainCount % 500 == 0 && countSkip > 1) {
+			countSkip -= 1;
 		}
 
-		// CHeck for collision
+		if (mainCount % countSkip == 0) {	// Used to control block speed
+			for (int i = 0; i < sizeof(nBlockX) / sizeof(nBlockX[0]); i++) {
+				nBlockX[i] -= blockSpeed;
+				if (nBlockX[i] < 0) {
+					nCurrentPiece[i] = std::rand() % (sizeof(nBlockX) / sizeof(nBlockX[0]));
+					nBlockX[i] = nFieldWidth + 10 + std::rand() % 20;
+				}
+			}
+		}
+
+		// Check for collision
 		for (int px = 0; px < 3; px++) {
 			for (int py = 0; py < 3; py++) {
 				if (charModel[3 * py + px] == L'O') {
 					for (int bx = 0; bx < 5; bx++) {
 						for (int by = 0; by < 5; by++) {
-							if (blockModels[nCurrentPiece][5 * by + bx] == L'X') {
-								if ((nCurrentY + py) == (nBlockY + by) && (nCurrentX + px) == (nBlockX + bx)) {
-									bGameOver = true;
+							for (int i = 0; i < sizeof(nCurrentPiece) / sizeof(nCurrentPiece[0]); i++) {
+								if (blockModels[nCurrentPiece[i]][5 * by + bx] == L'X') {
+									if ((nCurrentY + py) == (nBlockY[i] + by) && (nCurrentX + px) == (nBlockX[i] + bx)) {
+										bGameOver = true;
+									}
 								}
 							}
 						}
@@ -137,8 +153,10 @@ int main()
 		// Draw current block
 		for (int px = 0; px < 5; px++) {
 			for (int py = 0; py < 5; py++) {
-				if (blockModels[nCurrentPiece][5 * py + px] != L'.') {
-					screen[(nBlockY + py) * nScreenWidth + (nBlockX + px)] = blockModels[nCurrentPiece][5 * py + px];
+				for (int i = 0; i < sizeof(blockModels) / sizeof(blockModels[0]); i++) {
+					if (blockModels[nCurrentPiece[i]][5 * py + px] != L'.' && nBlockX[i] < nScreenWidth) {
+						screen[(nBlockY[i] + py) * nScreenWidth + (nBlockX[i] + px)] = blockModels[nCurrentPiece[i]][5 * py + px];
+					}
 				}
 			}
 		}

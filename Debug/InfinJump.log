@@ -1,5 +1,5 @@
 ﻿  InfinJump.cpp
-C:\Users\FunkyMonk\source\repos\InfinJump\InfinJump.cpp(80,25): warning C4244: '-=': conversion from 'double' to 'int', possible loss of data
-C:\Users\FunkyMonk\source\repos\InfinJump\InfinJump.cpp(83,25): warning C4244: '+=': conversion from 'double' to 'int', possible loss of data
-C:\Users\FunkyMonk\source\repos\InfinJump\InfinJump.cpp(86,43): warning C4244: '+=': conversion from 'double' to 'int', possible loss of data
+C:\Users\FunkyMonk\source\repos\InfinJump\InfinJump.cpp(83,25): warning C4244: '-=': conversion from 'double' to 'int', possible loss of data
+C:\Users\FunkyMonk\source\repos\InfinJump\InfinJump.cpp(86,25): warning C4244: '+=': conversion from 'double' to 'int', possible loss of data
+C:\Users\FunkyMonk\source\repos\InfinJump\InfinJump.cpp(89,43): warning C4244: '+=': conversion from 'double' to 'int', possible loss of data
   InfinJump.vcxproj -> C:\Users\FunkyMonk\source\repos\InfinJump\Debug\InfinJump.exe

@@ -1,3 +1,7 @@
+// Infinte Jump Game
+// Jump over incoming blocks using your keyboard's arrow keys. When a block clears the screen, you get a point.
+// Must be playe don an 80x30 command prompt
+
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -5,19 +9,20 @@
 #include <Windows.h>
 #include <chrono>
 #include <cmath>
+
 using namespace std::chrono_literals;	//So we can use "ms" in timing
 
-int nScreenWidth = 80;     // Console screen width X (columns)
-int nScreenHeight = 30;    // Console screen height Y (rows)
-int nFieldWidth = 80;      // Gameplay field width
-int nFieldHeight = 30;     // Gameplay field height
-std::wstring charModel;
-std::wstring blockModels[3];	// Array to hold block models
-unsigned char *pField = nullptr;
+int nScreenWidth = 80;				// Console screen width X (columns)
+int nScreenHeight = 30;				// Console screen height Y (rows)
+int nFieldWidth = 80;				// Gameplay field width
+int nFieldHeight = 30;				// Gameplay field height
+std::wstring charModel;				// Varible for holding character model
+std::wstring blockModels[8];		// Array to hold block models
+unsigned char *pField = nullptr;	// Initialize field 
 
 int main()
 {
-	// Create Screen Buffer
+	// Create Screen Buffer. Allows us to treat the console like an array of pixels. 
 	wchar_t *screen = new wchar_t[nScreenWidth * nScreenHeight];
 	for (int i = 0; i < nScreenWidth * nScreenHeight; i++) screen[i] = L' ';
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
@@ -25,34 +30,41 @@ int main()
 	DWORD dwBytesWritten = 0;
 
 	// Fill in model variables
-	charModel = L"OOOOOOOOO";	// 3x3
+	charModel = L"OOOOOOOOO";								// 3x3
 	blockModels[0].append(L"X....X....X....X....X....");	// 5x5
-	blockModels[1].append(L"XX...XX...XX...XX...XX...");	// 5x5
-	blockModels[2].append(L"XXXXXXXXXXXXXXXXXXXXXXXXX");	// 5x5
+	blockModels[1].append(L"XX...XX...XX...XX...XX...");	
+	blockModels[2].append(L"XXXXXXXXXXXXXXXXXXXXXXXXX");	
+	blockModels[3].append(L"XX.XXXXX...XXXXXXXXXX.XX."); 
+	blockModels[4].append(L"XX.XXXXX...XXXXXX........");
+	blockModels[5].append(L"........................X");
+	blockModels[6].append(L"XXXXX....................");
+	blockModels[7].append(L"XXXXXXXXXX...............");
 
 	pField = new unsigned char[nFieldWidth * nFieldHeight]; // Create play field buffer
-	for (int x = 0; x < nFieldWidth; x++) {
+	for (int x = 0; x < nFieldWidth; x++) {					// Fill the play field with blank spaces
 		for (int y = 0; y < nFieldHeight; y++) {
 			pField[y * nFieldWidth + x] = 11;
 		}
 	}
 
 	// Game logic setup
-	bool bKey[4];	// Storing key states
+	bool bKey[4];							// Storing key states
 	int nCurrentX = nFieldWidth / 2 - 2;	// Starting x pos of character
 	int nCurrentY = nFieldHeight - 3;		// Starting y pos of character
-	int nBlockX [3] = { nFieldWidth, nFieldWidth + 30, nFieldWidth + 60 };
-	int nBlockY[3] = { nFieldHeight - 5, nFieldHeight - 5, nFieldHeight - 5 };
-	int nCurrentPiece [3] = { 0, 1, 2 };
+	int nBlockX [3] = { nFieldWidth, nFieldWidth + 30, nFieldWidth + 60 };		// Starting xposition of blocks
+	int nBlockY[3] = { nFieldHeight - 5, nFieldHeight - 5, nFieldHeight - 5 };	// Starting y position of blocks
+	int nCurrentPiece [3] = { 0, 1, 2 };	// Array selecting initial 3 blocks
 	bool bGameOver = false;					// Main game loop trigger
+	int mainCount = 0;						// Game loop counter, used for timing
+	int blockSpeed = 1;						// Initial x speed of blocks
+	int countSkip = 3;						// Apply x speed to blocks every 3 counts. Decreases to increase block speed.
+	int score = 0;							// Score variable
+	
 	double jumpCounter = 0;					// Used for jumping math
-	double yVel = 0;
-	double grav = 1;
-	double timeInt = .5;
-	double speedLim = 1.5;
-	int mainCount = 0;
-	int blockSpeed = 1;
-	int countSkip = 3;
+	double yVel = 0;						// Initial jump velocity
+	double grav = 1;						// Gravity variable used to adjust jumping physics
+	double timeInt = .5;					// Time velocity is applied
+	double speedLim = 1.5;					// Max jumping/falling speed
 
 	while (!bGameOver) {	// Main game loop
 
@@ -72,13 +84,14 @@ int main()
 		else if (bKey[1] == 1 && (nCurrentX + nFieldWidth) % nFieldWidth != 0) {
 			nCurrentX -= 2;
 		}
-		if (bKey[2] == 1 && nCurrentY == nFieldHeight - 3) {
+		if (bKey[2] == 1 && nCurrentY == nFieldHeight - 3) {		// Only allow jump if on the ground
 			yVel = -3;
 			jumpCounter = 0;
 		}
 		
-		yVel += grav * jumpCounter;
+		yVel += grav * jumpCounter;	// Adjust y velocity. If not in jump loop, jumpCounter = 0 and yVel is 0. 
 		
+		// Adjust position based off yVel and timeInt. Cap at speed limits. 
 		if (yVel < -1 * speedLim) {
 			nCurrentY -= speedLim;
 		}
@@ -89,13 +102,15 @@ int main()
 			nCurrentY += std::round(yVel * timeInt);
 		}
 
-		jumpCounter += .05;
+		jumpCounter += .05;	// Increment jumpCounter
+
+		// Set character to ground if trying to go below the screen
 		if (nCurrentY > nFieldHeight - 3) {
 			nCurrentY = nFieldHeight - 3;
 			yVel = 0;
 		}
 
-		// Move block
+		// Adjust block speed
 		if (mainCount % 500 == 0 && countSkip == 1) {
 			blockSpeed++; 
 		}
@@ -103,12 +118,14 @@ int main()
 			countSkip -= 1;
 		}
 
+		// Move blocks
 		if (mainCount % countSkip == 0) {	// Used to control block speed
 			for (int i = 0; i < sizeof(nBlockX) / sizeof(nBlockX[0]); i++) {
 				nBlockX[i] -= blockSpeed;
-				if (nBlockX[i] < 0) {
-					nCurrentPiece[i] = std::rand() % (sizeof(nBlockX) / sizeof(nBlockX[0]));
-					nBlockX[i] = nFieldWidth + 10 + std::rand() % 20;
+				if (nBlockX[i] < 0) {	// Spawn new block if reached the end
+					nCurrentPiece[i] = std::rand() % (sizeof(blockModels) / sizeof(blockModels[0]));
+					nBlockX[i] = nFieldWidth + 10 + std::rand() % 20;	// Partially randomize spacing between blocks
+					score++;	// Increment score
 				}
 			}
 		}
@@ -153,13 +170,16 @@ int main()
 		// Draw current block
 		for (int px = 0; px < 5; px++) {
 			for (int py = 0; py < 5; py++) {
-				for (int i = 0; i < sizeof(blockModels) / sizeof(blockModels[0]); i++) {
-					if (blockModels[nCurrentPiece[i]][5 * py + px] != L'.' && nBlockX[i] < nScreenWidth) {
+				for (int i = 0; i < sizeof(nCurrentPiece) / sizeof(nCurrentPiece[0]); i++) {
+					if (blockModels[nCurrentPiece[i]][5 * py + px] != L'.' && nBlockX[i] + px < nScreenWidth) {
 						screen[(nBlockY[i] + py) * nScreenWidth + (nBlockX[i] + px)] = blockModels[nCurrentPiece[i]][5 * py + px];
 					}
 				}
 			}
 		}
+
+		// Draw score
+		swprintf_s(&screen[0], 16, L"SCORE: %8d", score);
 
 		// Display Frame
 		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
@@ -168,7 +188,7 @@ int main()
 
 	// Shutdown
 	CloseHandle(hConsole);
-	std::cout << "Game over!";
+	std::cout << "Game over! Your score: " << score << "\n\n\n";
 	system("pause");
 	return 0;
 }
